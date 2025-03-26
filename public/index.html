@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shot List Organizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      background: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+    input, textarea, select {
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .shots {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    .card img {
+      width: 100%;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎬 Shot List Organizer</h1>
+
+  <form id="uploadForm">
+    <label>Scene:</label>
+    <input type="text" name="scene" required />
+    
+    <label>Shot Type:</label>
+    <select name="shot_type" required>
+      <option value="Wide">Wide</option>
+      <option value="Medium">Medium</option>
+      <option value="Close-up">Close-up</option>
+    </select>
+    
+    <label>Description:</label>
+    <textarea name="description" rows="3" required></textarea>
+    
+    <label>Image:</label>
+    <input type="file" name="image" accept="image/*" />
+
+    <button type="submit">Upload Shot</button>
+  </form>
+
+  <section class="shots" id="shotList"></section>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const shotList = document.getElementById('shotList');
+
+    async function loadShots() {
+      const res = await fetch('http://localhost:8000/shots');
+      const data = await res.json();
+      shotList.innerHTML = '';
+      data.forEach(shot => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <button class="delete-btn" onclick="deleteShot(${shot.id})">×</button>
+          ${shot.image_url ? `<img src="${shot.image_url}" alt="Shot Image">` : ''}
+          <h3>Scene: ${shot.scene}</h3>
+          <p><strong>Type:</strong> ${shot.shot_type}</p>
+          <p>${shot.description}</p>
+        `;
+        shotList.appendChild(card);
+      });
+    }
+
+    async function deleteShot(id) {
+      await fetch(`http://localhost:8000/shots/${id}`, { method: 'DELETE' });
+      loadShots();
+    }
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      await fetch('http://localhost:8000/shots', {
+        method: 'POST',
+        body: formData
+      });
+      form.reset();
+      loadShots();
+    });
+
+    // Load shots on page load
+    loadShots();
+  </script>
+
+</body>
+</html>
